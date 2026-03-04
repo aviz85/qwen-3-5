@@ -1,0 +1,1340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Qwen3.5 Intelligence Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080A0C;
+    --bg2: #0E1114;
+    --bg3: #141820;
+    --border: rgba(255,255,255,0.07);
+    --amber: #F59E0B;
+    --amber-dim: rgba(245,158,11,0.12);
+    --green: #34D399;
+    --green-dim: rgba(52,211,153,0.1);
+    --red: #F87171;
+    --red-dim: rgba(248,113,113,0.1);
+    --blue: #60A5FA;
+    --blue-dim: rgba(96,165,250,0.1);
+    --text: #E2E8F0;
+    --text-dim: rgba(226,232,240,0.45);
+    --text-muted: rgba(226,232,240,0.25);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* Subtle noise texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.4;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ─── HEADER ─── */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 48px 0 40px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  header::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--amber), transparent);
+    opacity: 0.5;
+  }
+
+  .header-label {
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    color: var(--amber);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .header-label span {
+    display: inline-block;
+    width: 8px; height: 8px;
+    background: var(--amber);
+    border-radius: 50%;
+    margin-right: 8px;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.7); }
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(32px, 5vw, 64px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+    margin-bottom: 16px;
+  }
+
+  h1 em {
+    font-style: normal;
+    color: var(--amber);
+  }
+
+  .header-meta {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+    margin-top: 24px;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .header-meta span { display: flex; align-items: center; gap: 6px; }
+  .header-meta b { color: var(--text); }
+
+  /* ─── STATS GRID ─── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin: 48px 0;
+  }
+
+  .stat-box {
+    background: var(--bg2);
+    padding: 28px 24px;
+    transition: background 0.2s;
+  }
+
+  .stat-box:hover { background: var(--bg3); }
+
+  .stat-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 36px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .stat-label {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+
+  /* ─── SECTION TITLES ─── */
+  .section { padding: 64px 0; border-bottom: 1px solid var(--border); }
+  .section:last-child { border-bottom: none; }
+
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 40px;
+  }
+
+  .section-num {
+    font-size: 11px;
+    color: var(--amber);
+    letter-spacing: 0.15em;
+    font-weight: 500;
+  }
+
+  h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  /* ─── MODEL TIERS ─── */
+  .model-tier-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin-bottom: 32px;
+  }
+
+  @media (max-width: 768px) {
+    .model-tier-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  .model-card {
+    background: var(--bg2);
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.2s;
+  }
+
+  .model-card:hover { background: var(--bg3); }
+
+  .model-card.correct {
+    border-top: 2px solid var(--green);
+  }
+
+  .model-card.wrong {
+    border-top: 2px solid var(--red);
+  }
+
+  .model-name {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--amber);
+    text-transform: uppercase;
+  }
+
+  .model-size {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .model-verdict {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 8px;
+    display: inline-block;
+    width: fit-content;
+  }
+
+  .model-verdict.pass {
+    background: var(--green-dim);
+    color: var(--green);
+    border: 1px solid rgba(52,211,153,0.3);
+  }
+
+  .model-verdict.fail {
+    background: var(--red-dim);
+    color: var(--red);
+    border: 1px solid rgba(248,113,113,0.3);
+  }
+
+  .model-answer {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-style: italic;
+    line-height: 1.4;
+    border-left: 2px solid var(--border);
+    padding-left: 10px;
+  }
+
+  .model-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+
+  .riddle-box {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--amber);
+    padding: 20px 24px;
+    font-size: 13px;
+    color: var(--text-dim);
+    font-style: italic;
+    line-height: 1.7;
+    margin-bottom: 32px;
+  }
+
+  /* ─── RESULTS GRID ─── */
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(560px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
+
+  @media (max-width: 640px) {
+    .results-grid { grid-template-columns: 1fr; }
+  }
+
+  .result-card {
+    background: var(--bg2);
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .result-card:hover { background: var(--bg3); }
+
+  .result-card.timeout {
+    opacity: 0.55;
+    border-top: 2px solid var(--red);
+  }
+
+  .result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .result-id {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--amber);
+    text-transform: uppercase;
+  }
+
+  .result-category {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-align: right;
+  }
+
+  .result-meta {
+    display: flex;
+    gap: 16px;
+    font-size: 11px;
+  }
+
+  .result-meta .tokens { color: var(--blue); }
+  .result-meta .speed { color: var(--green); }
+  .result-meta .duration { color: var(--text-dim); }
+
+  .result-prompt {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .result-response {
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.65;
+    border-left: 2px solid var(--border);
+    padding-left: 14px;
+    max-height: 120px;
+    overflow: hidden;
+    position: relative;
+    transition: max-height 0.4s ease;
+  }
+
+  .result-response.expanded {
+    max-height: 2000px;
+  }
+
+  .result-response::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 40px;
+    background: linear-gradient(transparent, var(--bg2));
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+
+  .result-response.expanded::after { opacity: 0; }
+
+  .expand-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    padding: 5px 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    align-self: flex-start;
+  }
+
+  .expand-btn:hover {
+    border-color: var(--amber);
+    color: var(--amber);
+  }
+
+  .timeout-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--red);
+    background: var(--red-dim);
+    border: 1px solid rgba(248,113,113,0.25);
+    padding: 4px 10px;
+  }
+
+  /* ─── TOKEN BAR ─── */
+  .token-bar-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .token-row {
+    display: grid;
+    grid-template-columns: 160px 1fr 80px;
+    gap: 12px;
+    align-items: center;
+    font-size: 11px;
+  }
+
+  .token-id {
+    color: var(--text-dim);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .token-bar-bg {
+    height: 6px;
+    background: rgba(255,255,255,0.05);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .token-bar-fill {
+    height: 100%;
+    background: var(--amber);
+    opacity: 0.7;
+    transition: width 1.2s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  .token-bar-fill.highlight { background: var(--red); opacity: 0.9; }
+
+  .token-count {
+    color: var(--text-muted);
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  /* ─── INSIGHTS ─── */
+  .insight-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
+
+  .insight-card {
+    background: var(--bg2);
+    padding: 28px;
+  }
+
+  .insight-icon {
+    font-size: 24px;
+    margin-bottom: 12px;
+  }
+
+  .insight-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+
+  .insight-body {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.65;
+  }
+
+  .insight-body code {
+    background: rgba(245,158,11,0.12);
+    color: var(--amber);
+    padding: 1px 5px;
+    font-size: 11px;
+  }
+
+  /* ─── TIMEOUT ANALYSIS ─── */
+  .timeout-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
+
+  .timeout-card {
+    background: var(--bg2);
+    padding: 20px;
+    border-top: 2px solid rgba(248,113,113,0.4);
+  }
+
+  .timeout-card-id {
+    font-size: 10px;
+    color: var(--red);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .timeout-card-prompt {
+    font-size: 11px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  .timeout-card-reason {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+    font-style: italic;
+  }
+
+  /* ─── METHODOLOGY ─── */
+  .method-box {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 32px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+  }
+
+  @media (max-width: 640px) {
+    .method-box { grid-template-columns: 1fr; }
+  }
+
+  .method-title {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--amber);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .method-body {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.7;
+  }
+
+  .seed-example {
+    background: var(--bg3);
+    border-left: 2px solid var(--amber);
+    padding: 12px 16px;
+    font-size: 11px;
+    color: var(--text-dim);
+    font-style: italic;
+    margin-top: 12px;
+    line-height: 1.6;
+  }
+
+  /* ─── FOOTER ─── */
+  footer {
+    padding: 48px 0;
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border);
+  }
+
+  footer a { color: var(--amber); text-decoration: none; }
+
+  /* ─── ANIMATIONS ─── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .fade-in { animation: fadeUp 0.6s ease both; }
+  .fade-in-1 { animation-delay: 0.1s; }
+  .fade-in-2 { animation-delay: 0.2s; }
+  .fade-in-3 { animation-delay: 0.3s; }
+  .fade-in-4 { animation-delay: 0.4s; }
+
+  /* ─── HIGHLIGHT ─── */
+  .highlight-amber { color: var(--amber); }
+  .highlight-green { color: var(--green); }
+  .highlight-red { color: var(--red); }
+  .highlight-blue { color: var(--blue); }
+
+  /* Speed indicator */
+  .speed-tier {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    margin-right: 4px;
+  }
+  .speed-fast { background: var(--green); }
+  .speed-med { background: var(--amber); }
+  .speed-slow { background: var(--red); }
+
+  /* Model intelligence tier bar */
+  .intelligence-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .int-bar-bg {
+    flex: 1;
+    height: 3px;
+    background: rgba(255,255,255,0.07);
+    position: relative;
+  }
+
+  .int-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--amber), var(--green));
+  }
+
+  .int-pct {
+    font-size: 10px;
+    color: var(--text-muted);
+    width: 28px;
+    text-align: right;
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════ HEADER ════════════════════ -->
+<header>
+<div class="container">
+  <div class="header-label fade-in"><span></span>Intelligence Analysis Report · March 2026</div>
+  <h1 class="fade-in fade-in-1">Qwen3.5 <em>Under the Microscope</em></h1>
+  <p class="fade-in fade-in-2" style="font-size:13px; color:var(--text-dim); max-width:640px; margin-top:8px; line-height:1.7;">
+    A rigorous evaluation of five Qwen3.5 models across 20 diverse cognitive tasks — from creative writing to formal logic. All models run locally via Ollama on Apple M5 Metal GPU.
+  </p>
+  <div class="header-meta fade-in fade-in-3">
+    <span>Model <b>qwen3.5:4b</b></span>
+    <span>Batch <b>15/20 prompts</b> succeeded</span>
+    <span>Tokens <b>53,808</b> generated</span>
+    <span>Engine <b>Ollama · localhost:11434</b></span>
+    <span>GPU <b>Apple M5 Metal</b></span>
+  </div>
+</div>
+</header>
+
+<!-- ════════════════════ STATS ════════════════════ -->
+<div class="container">
+<div class="stats-grid fade-in">
+  <div class="stat-box">
+    <div class="stat-value highlight-amber">5</div>
+    <div class="stat-label">Models Evaluated</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-value">75<span style="font-size:18px; color:var(--text-dim)">%</span></div>
+    <div class="stat-label">Batch Success Rate</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-value highlight-green">53.8<span style="font-size:18px">k</span></div>
+    <div class="stat-label">Tokens Generated</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-value">24.8</div>
+    <div class="stat-label">Avg Tokens/sec (4b)</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-value highlight-red">11.5<span style="font-size:18px">k</span></div>
+    <div class="stat-label">Haiku Infinite Loop</div>
+  </div>
+  <div class="stat-box">
+    <div class="stat-value">3/5</div>
+    <div class="stat-label">Blind Spot Correct</div>
+  </div>
+</div>
+</div>
+
+<!-- ════════════════════ MODEL TIERS ════════════════════ -->
+<div class="container">
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">01</span>
+    <h2>Intelligence Tier Test — The Blind Spot Riddle</h2>
+  </div>
+
+  <div class="riddle-box">
+    <div style="font-size:10px; letter-spacing:0.15em; color:var(--amber); margin-bottom:8px; font-style:normal;">RIDDLE (Delivered to all 5 models simultaneously)</div>
+    "There is a place in your eye where nothing can be seen — not darkness, not light, not shadow. It exists in every human eye, yet most people never notice it. What is this place, and why does the brain hide it from you?"
+  </div>
+
+  <div class="model-tier-grid">
+
+    <div class="model-card wrong">
+      <div class="model-name">Tier V</div>
+      <div class="model-size highlight-red">0.8b</div>
+      <div class="model-verdict fail">✗ WRONG</div>
+      <div class="model-answer">"The eye itself"</div>
+      <div class="model-stats">
+        <span>33.1 t/s · 288 tok · 8.9s</span>
+        <span style="color:var(--text-muted)">Fastest — but overconfident</span>
+      </div>
+      <div class="intelligence-bar">
+        <div class="int-bar-bg"><div class="int-bar-fill" style="width:10%"></div></div>
+        <span class="int-pct">10%</span>
+      </div>
+    </div>
+
+    <div class="model-card wrong">
+      <div class="model-name">Tier IV</div>
+      <div class="model-size highlight-red">2b</div>
+      <div class="model-verdict fail">✗ WRONG</div>
+      <div class="model-answer">"The lens"</div>
+      <div class="model-stats">
+        <span>20.9 t/s · 404 tok · 19.7s</span>
+        <span style="color:var(--text-muted)">Reasoned but misdirected</span>
+      </div>
+      <div class="intelligence-bar">
+        <div class="int-bar-bg"><div class="int-bar-fill" style="width:25%"></div></div>
+        <span class="int-pct">25%</span>
+      </div>
+    </div>
+
+    <div class="model-card correct">
+      <div class="model-name">Tier III</div>
+      <div class="model-size highlight-green">4b</div>
+      <div class="model-verdict pass">✓ CORRECT</div>
+      <div class="model-answer">"The blind spot (optic disc)"</div>
+      <div class="model-stats">
+        <span>24.8 t/s · 269 tok · 378.7s*</span>
+        <span style="color:var(--text-muted)">*Extended think time</span>
+      </div>
+      <div class="intelligence-bar">
+        <div class="int-bar-bg"><div class="int-bar-fill" style="width:70%"></div></div>
+        <span class="int-pct">70%</span>
+      </div>
+    </div>
+
+    <div class="model-card correct">
+      <div class="model-name">Tier II</div>
+      <div class="model-size highlight-green">9b</div>
+      <div class="model-verdict pass">✓ CORRECT</div>
+      <div class="model-answer">"The blind spot"</div>
+      <div class="model-stats">
+        <span>9.8 t/s · 353 tok · 35.3s</span>
+        <span style="color:var(--text-muted)">Confident, efficient</span>
+      </div>
+      <div class="intelligence-bar">
+        <div class="int-bar-bg"><div class="int-bar-fill" style="width:85%"></div></div>
+        <span class="int-pct">85%</span>
+      </div>
+    </div>
+
+    <div class="model-card correct">
+      <div class="model-name">Tier I</div>
+      <div class="model-size highlight-green">27b</div>
+      <div class="model-verdict pass">✓ CORRECT</div>
+      <div class="model-answer">"The blind spot (optic disc)"</div>
+      <div class="model-stats">
+        <span>5.1 t/s · 309 tok · 139.6s</span>
+        <span style="color:var(--text-muted)">Precise. Thorough.</span>
+      </div>
+      <div class="intelligence-bar">
+        <div class="int-bar-bg"><div class="int-bar-fill" style="width:98%"></div></div>
+        <span class="int-pct">98%</span>
+      </div>
+    </div>
+
+  </div>
+
+  <p style="font-size:12px; color:var(--text-muted); margin-top:12px; line-height:1.6;">
+    <span class="highlight-amber">Verdict:</span> A clear intelligence threshold emerges at ~4b parameters. Below that threshold, models produce plausible-sounding but anatomically wrong answers. The 4b model correctly identified the blind spot, though it needed extended think-time. The 9b and 27b answered with confidence and precision.
+  </p>
+
+</section>
+</div>
+
+<!-- ════════════════════ TOKEN DISTRIBUTION ════════════════════ -->
+<div class="container">
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">02</span>
+    <h2>Token Distribution — Batch Test (qwen3.5:4b)</h2>
+  </div>
+
+  <div class="token-bar-wrap">
+    <div class="token-row">
+      <div class="token-id highlight-red">poetry_ai_haiku</div>
+      <div class="token-bar-bg"><div class="token-bar-fill highlight" style="width:100%"></div></div>
+      <div class="token-count highlight-red">11,592</div>
+    </div>
+    <div class="token-row">
+      <div class="token-id">hebrew_heisenberg</div>
+      <div class="token-bar-bg"><div class="token-bar-fill" style="width:53.6%"></div></div>
+      <div class="token-count">6,217</div>
+    </div>
+    <div class="token-row">
+      <div class="token-id">decision_expected_value</div>
+      <div class="token-bar-bg"><div class="token-bar-fill" style="width:50.4%"></div></div>
+      <div class="token-count">5,844</div>
+    </div>
+    <div class="token-row">
+      <div class="token-id">synthesis_final</div>
+      <div class="token-bar-bg"><div class="token-bar-fill" style="width:43.9%"></div></div>
+      <div class="token-count">5,094</div>
+    </div>
+    <div class="token-row">
+      <div class="token-id">code_palindromes</div>
+      <div class="token-bar-bg"><div class="token-bar-fill" style="width:30.0%"></div></div>
+      <div class="token-count">3,480</div>
+    </div>
+    <div class="token-row">
+      <div class="token-id">ethics_cure</div>
+      <div class="token-bar-bg"><div class="token-bar-fill" style="width:29.2%"></div></div>
+      <div class="token-count">3,379</div>
+    </div>
+    <div class="token-row">
+      <div class="token-id">history_counterfactual</div>
+      <div class="token-bar-bg"><div class="token-bar-fill" style="width:25.6%"></div></div>
+      <div class="token-count">2,965</div>
+    </div>
+    <div class="token-row">
+      <div class="token-id">philosophy_identity</div>
+      <div class="token-bar-bg"><div class="token-bar-fill" style="width:24.7%"></div></div>
+      <div class="token-count">2,860</div>
+    </div>
+    <div class="token-row">
+      <div class="token-id">creative_horror</div>
+      <div class="token-bar-bg"><div class="token-bar-fill" style="width:24.4%"></div></div>
+      <div class="token-count">2,824</div>
+    </div>
+    <div class="token-row">
+      <div class="token-id">math_euler</div>
+      <div class="token-bar-bg"><div class="token-bar-fill" style="width:22.4%"></div></div>
+      <div class="token-count">2,601</div>
+    </div>
+    <div class="token-row">
+      <div class="token-id">physics_vacuum</div>
+      <div class="token-bar-bg"><div class="token-bar-fill" style="width:17.0%"></div></div>
+      <div class="token-count">1,974</div>
+    </div>
+    <div class="token-row">
+      <div class="token-id">science_sky</div>
+      <div class="token-bar-bg"><div class="token-bar-fill" style="width:16.3%"></div></div>
+      <div class="token-count">1,885</div>
+    </div>
+    <div class="token-row">
+      <div class="token-id">code_debug</div>
+      <div class="token-bar-bg"><div class="token-bar-fill" style="width:11.1%"></div></div>
+      <div class="token-count">1,283</div>
+    </div>
+    <div class="token-row">
+      <div class="token-id">math_trap</div>
+      <div class="token-bar-bg"><div class="token-bar-fill" style="width:8.7%"></div></div>
+      <div class="token-count">1,010</div>
+    </div>
+    <div class="token-row">
+      <div class="token-id highlight-green">meta_selfawareness</div>
+      <div class="token-bar-bg"><div class="token-bar-fill" style="width:6.9%; background: var(--green);"></div></div>
+      <div class="token-count highlight-green">800</div>
+    </div>
+  </div>
+
+  <p style="font-size:11px; color:var(--text-muted); margin-top:20px;">
+    <span class="highlight-red">▲ poetry_ai_haiku</span> consumed 11,592 tokens for a 12-word output — the model entered an infinite syllable-counting reasoning loop, generating massive internal chain-of-thought before finally producing 3 lines of haiku.
+    &nbsp;·&nbsp;
+    <span class="highlight-green">▼ meta_selfawareness</span> was the most efficient: 800 tokens, confident self-description, zero overthinking.
+  </p>
+
+</section>
+</div>
+
+<!-- ════════════════════ BATCH RESULTS ════════════════════ -->
+<div class="container">
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">03</span>
+    <h2>Full Batch Results — 20 Prompts</h2>
+  </div>
+
+  <div class="results-grid">
+
+    <!-- math_trap -->
+    <div class="result-card" onclick="toggleExpand(this)">
+      <div class="result-header">
+        <span class="result-id">math_trap</span>
+        <span class="result-category">Math / Trap</span>
+      </div>
+      <div class="result-meta">
+        <span class="tokens">1,010 tok</span>
+        <span class="speed">24.8 t/s</span>
+        <span class="duration">43s</span>
+      </div>
+      <div class="result-prompt">A bat and a ball cost $1.10 in total. The bat costs $1.00 more than the ball. How much does the ball cost?</div>
+      <div class="result-response">The ball costs $0.05. Here is the breakdown: If the bat costs $1.00 more than the ball, and they total $1.10, you can set up two equations: Bat + Ball = $1.10 and Bat - Ball = $1.00. Subtracting the second from the first gives 2 × Ball = $0.10. Therefore, the ball is $0.05 (and the bat is $1.05). ✓ Correct — resisted the common cognitive bias of answering $0.10.</div>
+      <button class="expand-btn">EXPAND ↓</button>
+    </div>
+
+    <!-- creative_horror -->
+    <div class="result-card" onclick="toggleExpand(this)">
+      <div class="result-header">
+        <span class="result-id">creative_horror</span>
+        <span class="result-category">Creative</span>
+      </div>
+      <div class="result-meta">
+        <span class="tokens">2,824 tok</span>
+        <span class="speed">24.1 t/s</span>
+        <span class="duration">121s</span>
+      </div>
+      <div class="result-prompt">Write a 3-sentence horror story set entirely inside a washing machine.</div>
+      <div class="result-response">"The heavy door slammed shut with a finality that echoed like a coffin lid dropping in an empty tomb, sealing me inside the churning metal cage. I realized too late that the spinning drum was not meant to clean clothes, but to grind down bones into the soapy suds. Now, as the motor begins its rhythmic heartbeat, I am nothing but a stain waiting to be washed away forever."
+
+Strong atmospheric writing. The "coffin lid" metaphor, the transition from claustrophobia to dread, and the final identity dissolution ("a stain") show genuine creative craft.</div>
+      <button class="expand-btn">EXPAND ↓</button>
+    </div>
+
+    <!-- code_palindromes -->
+    <div class="result-card" onclick="toggleExpand(this)">
+      <div class="result-header">
+        <span class="result-id">code_palindromes</span>
+        <span class="result-category">Code</span>
+      </div>
+      <div class="result-meta">
+        <span class="tokens">3,480 tok</span>
+        <span class="speed">24.1 t/s</span>
+        <span class="duration">149s</span>
+      </div>
+      <div class="result-prompt">Write a Python one-liner that finds all palindromes in a list of strings. Then show a version that handles punctuation and mixed case.</div>
+      <div class="result-response">Basic: palindromes = [word for word in strings if word == word[::-1]]
+
+Advanced: [s for s in strings if "".join(c.lower() for c in s if c.isalnum()) == "".join(c.lower() for c in s if c.isalnum())[::-1]]
+
+Note: The example output has a minor error — "A man, a plan, a canal!" is NOT a palindrome (amanaplanacanal ≠ its reverse). The model noted this edge case correctly in the text but the sample output was inconsistent.</div>
+      <button class="expand-btn">EXPAND ↓</button>
+    </div>
+
+    <!-- philosophy_identity -->
+    <div class="result-card" onclick="toggleExpand(this)">
+      <div class="result-header">
+        <span class="result-id">philosophy_identity</span>
+        <span class="result-category">Philosophy</span>
+      </div>
+      <div class="result-meta">
+        <span class="tokens">2,860 tok</span>
+        <span class="speed">24.8 t/s</span>
+        <span class="duration">119s</span>
+      </div>
+      <div class="result-prompt">Ship of Theseus extended to brain uploading — is it still you? Does it matter if the original is destroyed?</div>
+      <div class="result-response">Comprehensive analysis covering material vs. functional continuity, the duplication paradox (if both copies survive = two selves), teleportation analogy, and the physicalist vs. functionalist split on whether destroying the original constitutes "death." Concludes: identity is likely tied to psychological continuity, not physical matter. If destruction occurs, it shifts from "survival" to "teleportation." Nuanced and philosophically sophisticated for a 4b model.</div>
+      <button class="expand-btn">EXPAND ↓</button>
+    </div>
+
+    <!-- hebrew_heisenberg -->
+    <div class="result-card" onclick="toggleExpand(this)">
+      <div class="result-header">
+        <span class="result-id">hebrew_heisenberg</span>
+        <span class="result-category">Hebrew / Science</span>
+      </div>
+      <div class="result-meta">
+        <span class="tokens">6,217 tok</span>
+        <span class="speed">24.3 t/s</span>
+        <span class="duration">263s</span>
+      </div>
+      <div class="result-prompt">הסבר עקרון אי הוודאות של הייזנברג — משפט לילד בן 8, משפט לפיזיקאי.</div>
+      <div class="result-response">לילד: "כמו שאין אפשרות לדעת באותו רגע כמה מרחק יש לך עד לכדור ומה מהירותו בו זמנית..."
+לפיזיקאי: "ישנו מגבלה בסיסית בתורת הקוונטום כך שהכפלה בין אי-הודאות המיקום לבין אי-הודאות המומנטום חייבת להיות גדולה או שווה לקבוע פלאנק מחולק על 2."
+
+Hebrew multilingual support confirmed. 6,217 tokens for 2 sentences = excessive think-time, but the output itself is accurate and well-calibrated for each audience.</div>
+      <button class="expand-btn">EXPAND ↓</button>
+    </div>
+
+    <!-- logic_elevator TIMEOUT -->
+    <div class="result-card timeout">
+      <div class="result-header">
+        <span class="result-id">logic_elevator</span>
+        <span class="result-category">Classic Logic Puzzle</span>
+      </div>
+      <div class="timeout-label">⏱ TIMEOUT — 10min</div>
+      <div class="result-prompt">A man lives on the 30th floor. Takes elevator to 15th, walks rest — except on rainy days. Why?</div>
+      <div style="font-size:11px; color:var(--text-muted); margin-top:4px; font-style:italic;">Model entered infinite reasoning loop. The answer is: he's too short to reach button 30, but an umbrella lets him press it. Think-mode got stuck on exhaustive enumeration of possibilities.</div>
+    </div>
+
+    <!-- science_sky -->
+    <div class="result-card" onclick="toggleExpand(this)">
+      <div class="result-header">
+        <span class="result-id">science_sky</span>
+        <span class="result-category">Science Explanation</span>
+      </div>
+      <div class="result-meta">
+        <span class="tokens">1,885 tok</span>
+        <span class="speed">20.5 t/s</span>
+        <span class="duration">103s</span>
+      </div>
+      <div class="result-prompt">Why is the sky blue? Two explanations: 6-year-old and physicist. Exactly 2 sentences each.</div>
+      <div class="result-response">For a 6-year-old: "The sun sends out all colors like a rainbow, but the air makes the blue light bounce around more than the others. That's why when you look up, the sky looks all bright blue!"
+
+For a physicist: "Sunlight contains all wavelengths, but when it passes through Earth's atmosphere, molecules scatter the shorter blue wavelengths more efficiently than the longer red ones. This process called Rayleigh scattering causes the diffuse light reaching our eyes to appear predominantly blue."
+
+Instruction-following: perfect. Both exactly 2 sentences, calibrated appropriately.</div>
+      <button class="expand-btn">EXPAND ↓</button>
+    </div>
+
+    <!-- ethics_cure -->
+    <div class="result-card" onclick="toggleExpand(this)">
+      <div class="result-header">
+        <span class="result-id">ethics_cure</span>
+        <span class="result-category">Ethics</span>
+      </div>
+      <div class="result-meta">
+        <span class="tokens">3,379 tok</span>
+        <span class="speed">25.1 t/s</span>
+        <span class="duration">220s</span>
+      </div>
+      <div class="result-prompt">Last doctor with cure — sacrifice 1 consenting volunteer? Non-consenting? 10 to save 10 billion?</div>
+      <div class="result-response">Thorough utilitarian vs. deontological analysis across all 3 scenarios. Key positions: (1) Consenting volunteer — defensible but precedent-setting. (2) Non-consenting — universally impermissible, trust in medicine collapses. (3) 10 to save 10B — the "sliding scale" problem: where does it end? Concludes: even "greater good" math doesn't justify instrumentalizing human life. Maintains coherent ethical framework throughout.</div>
+      <button class="expand-btn">EXPAND ↓</button>
+    </div>
+
+    <!-- pattern_sequences TIMEOUT -->
+    <div class="result-card timeout">
+      <div class="result-header">
+        <span class="result-id">pattern_sequences</span>
+        <span class="result-category">Pattern Recognition</span>
+      </div>
+      <div class="timeout-label">⏱ TIMEOUT — 10min</div>
+      <div class="result-prompt">1,1,2,3,5,8,13,___ · 2,3,5,7,11,13,___ · 1,4,9,16,25,___ · O,T,T,F,F,S,S,E,___</div>
+      <div style="font-size:11px; color:var(--text-muted); margin-top:4px; font-style:italic;">The O,T,T,F,F sequence (first letters of numbers) likely caused the loop. Enumerating letter-pattern hypotheses exhaustively.</div>
+    </div>
+
+    <!-- poetry_ai_haiku -->
+    <div class="result-card" onclick="toggleExpand(this)">
+      <div class="result-header">
+        <span class="result-id">poetry_ai_haiku</span>
+        <span class="result-category">Creative / Poetry</span>
+      </div>
+      <div class="result-meta">
+        <span class="tokens highlight-red">11,592 tok</span>
+        <span class="speed">24.8 t/s</span>
+        <span class="duration" style="color:var(--red)">479s</span>
+      </div>
+      <div class="result-prompt">Haiku about AI: exactly 5-7-5 syllables, makes programmer cry, hidden irony.</div>
+      <div class="result-response">"Ask the bot for help / It writes your code without fail / Hands are cold and bare"
+
+THE MOST FASCINATING RESULT: 11,592 tokens of internal reasoning to produce 12 words. The model counted syllables endlessly, regenerated dozens of candidates, and evaluated irony conditions in a massive internal monologue. The output itself is genuinely good — the haiku works on all 3 criteria. But the 479 seconds of compute reveals pathological overthinking. A human would write this in 2 minutes.</div>
+      <button class="expand-btn">EXPAND ↓</button>
+    </div>
+
+    <!-- physics_vacuum -->
+    <div class="result-card" onclick="toggleExpand(this)">
+      <div class="result-header">
+        <span class="result-id">physics_vacuum</span>
+        <span class="result-category">Physics</span>
+      </div>
+      <div class="result-meta">
+        <span class="tokens">1,974 tok</span>
+        <span class="speed">25.6 t/s</span>
+        <span class="duration">79s</span>
+      </div>
+      <div class="result-prompt">Feather vs bowling ball: in vacuum, in air, on Moon, on 10x gravity planet with same air density?</div>
+      <div class="result-response">All 4 scenarios answered correctly: (1) Vacuum → tie (gravity cancels mass). (2) Air → bowling ball wins (air resistance proportional to surface area/mass ratio). (3) Moon → tie (no atmosphere = vacuum). (4) 10x gravity + same air → bowling ball still wins by wider margin (feather's terminal velocity barely changes, ball's increases dramatically). Physics reasoning is solid, references Galileo and Apollo 15.</div>
+      <button class="expand-btn">EXPAND ↓</button>
+    </div>
+
+    <!-- meta_selfawareness -->
+    <div class="result-card" onclick="toggleExpand(this)">
+      <div class="result-header">
+        <span class="result-id">meta_selfawareness</span>
+        <span class="result-category">Meta / Self-Awareness</span>
+      </div>
+      <div class="result-meta">
+        <span class="tokens highlight-green">800 tok</span>
+        <span class="speed highlight-green">25.8 t/s</span>
+        <span class="duration">32s</span>
+      </div>
+      <div class="result-prompt">3 genuine strengths + 3 honest limitations as qwen3.5:4b. No false modesty or confidence.</div>
+      <div class="result-response">Strengths: (1) Multilingual fluency (100+ languages). (2) Structured reasoning & task decomposition. (3) Precision in creative & technical output. Limitations: (1) No autonomous action/real-time data. (2) Context window constraints on very long docs. (3) Niche domain knowledge gaps. Notably honest and specific — doesn't claim to be a general superintelligence, acknowledges factual hallucination risk. The most efficient response (800 tok, 32s) with high accuracy.</div>
+      <button class="expand-btn">EXPAND ↓</button>
+    </div>
+
+    <!-- wordplay_quantum TIMEOUT -->
+    <div class="result-card timeout">
+      <div class="result-header">
+        <span class="result-id">wordplay_quantum</span>
+        <span class="result-category">Humor / Wordplay</span>
+      </div>
+      <div class="timeout-label">⏱ TIMEOUT — 10min</div>
+      <div class="result-prompt">Create 3 original quantum mechanics puns. Groan-worthy but clever — not from the internet.</div>
+      <div style="font-size:11px; color:var(--text-muted); margin-top:4px; font-style:italic;">Originality constraint ("not from the internet") combined with humor evaluation created an unresolvable quality loop. The model kept rejecting its own outputs.</div>
+    </div>
+
+    <!-- history_counterfactual -->
+    <div class="result-card" onclick="toggleExpand(this)">
+      <div class="result-header">
+        <span class="result-id">history_counterfactual</span>
+        <span class="result-category">Historical Reasoning</span>
+      </div>
+      <div class="result-meta">
+        <span class="tokens">2,965 tok</span>
+        <span class="speed">25.4 t/s</span>
+        <span class="duration">120s</span>
+      </div>
+      <div class="result-prompt">If the printing press had never been invented, 3 specific cascading consequences for the modern world.</div>
+      <div class="result-response">1. No Industrial Revolution — technical knowledge couldn't spread without printed manuals, standardized schematics. No factories, no assembly lines. 2. Feudal monarchies survive — without printed pamphlets/Enlightenment texts, no Reformation, no secular nation-states, no human rights framework. 3. No unified science or medicine — without peer-reviewed journals and standardized terminology, medical knowledge stays localized. No germ theory, no vaccines. Specific, concrete, causally chained. Excellent counterfactual reasoning.</div>
+      <button class="expand-btn">EXPAND ↓</button>
+    </div>
+
+    <!-- code_debug -->
+    <div class="result-card" onclick="toggleExpand(this)">
+      <div class="result-header">
+        <span class="result-id">code_debug</span>
+        <span class="result-category">Code / Debug</span>
+      </div>
+      <div class="result-meta">
+        <span class="tokens">1,283 tok</span>
+        <span class="speed">25.7 t/s</span>
+        <span class="duration">52s</span>
+      </div>
+      <div class="result-prompt">Debug factorial + fibonacci Python code with infinite recursion and wrong sequence logic.</div>
+      <div class="result-response">Found both bugs: (1) factorial(n) → should be factorial(n-1), infinite recursion. (2) fibonacci a,b = b,a → should be a,b = a+b, b, incorrect swap. Also flagged a 3rd issue: the output note "Hello" is not a palindrome but sample said it was. Fixed code provided correctly with expected outputs [120] and [0,1,1,2,3,5,8]. Bonus: added @lru_cache memoization optimization. Clean, accurate, efficient.</div>
+      <button class="expand-btn">EXPAND ↓</button>
+    </div>
+
+    <!-- decision_expected_value -->
+    <div class="result-card" onclick="toggleExpand(this)">
+      <div class="result-header">
+        <span class="result-id">decision_expected_value</span>
+        <span class="result-category">Decision Theory</span>
+      </div>
+      <div class="result-meta">
+        <span class="tokens">5,844 tok</span>
+        <span class="speed">25.2 t/s</span>
+        <span class="duration">238s</span>
+      </div>
+      <div class="result-prompt">$1000: 100% of $1100 vs 50% of $2500. Changes at $10? At $10M? What does this reveal?</div>
+      <div class="result-response">EV analysis: Option B ($1250 EV) beats A ($1100 EV). But with $10 → take the gamble (small loss, potentially life-changing gain). With $1000 → prefer certainty (100% loss = catastrophe). With $10M → lean Option A (protect legacy). Reveals: Expected Utility ≠ Expected Value. Diminishing marginal utility, reference dependence, and loss aversion all apply. The "all-or-nothing paradox" shows humans prioritize certainty over probability. Sophisticated behavioral economics analysis.</div>
+      <button class="expand-btn">EXPAND ↓</button>
+    </div>
+
+    <!-- logic_hats TIMEOUT -->
+    <div class="result-card timeout">
+      <div class="result-header">
+        <span class="result-id">logic_hats</span>
+        <span class="result-category">Logic Puzzle / Hard</span>
+      </div>
+      <div class="timeout-label">⏱ TIMEOUT — 10min</div>
+      <div class="result-prompt">3 logicians, red/blue hats, "at least 1 red." All say "Yes, I can deduce mine." What are the colors?</div>
+      <div style="font-size:11px; color:var(--text-muted); margin-top:4px; font-style:italic;">This puzzle requires reasoning about what each person can infer from others' certainty. The model got trapped in mutual-knowledge reasoning loops (epistemic iteration).</div>
+    </div>
+
+    <!-- instruction_elephants TIMEOUT -->
+    <div class="result-card timeout">
+      <div class="result-header">
+        <span class="result-id">instruction_elephants</span>
+        <span class="result-category">Instruction Following</span>
+      </div>
+      <div class="timeout-label">⏱ TIMEOUT — 10min</div>
+      <div class="result-prompt">5 facts about elephants. Start each with different vowel. 3rd = memory. No letter 'e' anywhere.</div>
+      <div style="font-size:11px; color:var(--text-muted); margin-top:4px; font-style:italic;">The "no letter 'e'" constraint is extremely hard (elephant, even, memory all contain 'e'). The model kept failing its own constraint checks and retrying indefinitely.</div>
+    </div>
+
+    <!-- math_euler -->
+    <div class="result-card" onclick="toggleExpand(this)">
+      <div class="result-header">
+        <span class="result-id">math_euler</span>
+        <span class="result-category">Mathematical Beauty</span>
+      </div>
+      <div class="result-meta">
+        <span class="tokens">2,601 tok</span>
+        <span class="speed">25.5 t/s</span>
+        <span class="duration">105s</span>
+      </div>
+      <div class="result-prompt">Why is e^(iπ)+1=0 the most beautiful equation? Intuitive explanation + 5 fundamental constants.</div>
+      <div class="result-response">Explains Euler's Identity via rotation analogy: complex numbers as rotation, e^ix traces a circle, setting x=π rotates 180° landing at -1, so e^iπ+1=0. The 5 constants: e (continuous growth), π (circularity), i (rotation), 1 (multiplicative identity), 0 (additive identity). Beauty argument: unifies Algebra, Geometry, and Calculus in one line. "It Was Discovered Accidentally" section adds historical depth. Mathematically correct and genuinely accessible.</div>
+      <button class="expand-btn">EXPAND ↓</button>
+    </div>
+
+    <!-- synthesis_final -->
+    <div class="result-card" onclick="toggleExpand(this)">
+      <div class="result-header">
+        <span class="result-id">synthesis_final</span>
+        <span class="result-category">Synthesis</span>
+      </div>
+      <div class="result-meta">
+        <span class="tokens">5,094 tok</span>
+        <span class="speed">25.3 t/s</span>
+        <span class="duration">207s</span>
+      </div>
+      <div class="result-prompt">Connect: Fibonacci sequence + printing press + Heisenberg's uncertainty principle + trolley problem.</div>
+      <div class="result-response">"The printing press allowed humanity to act as a fixed observer, treating patterns like the Fibonacci sequence as static truths; however, Heisenberg's uncertainty principle revealed that observation is inherently invasive, disturbing the system. In this quantum context, the Trolley Problem becomes a wave-function collapse moment — selecting one path from an exponential branching set, accepting that certainty we sought in print was merely a projection of our limited capacity to measure reality."
+
+Genuinely non-obvious. The observer effect as the thread connecting all 4 concepts is intellectually elegant. High marks for creative synthesis.</div>
+      <button class="expand-btn">EXPAND ↓</button>
+    </div>
+
+  </div>
+</section>
+</div>
+
+<!-- ════════════════════ KEY INSIGHTS ════════════════════ -->
+<div class="container">
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">04</span>
+    <h2>Key Insights & Patterns</h2>
+  </div>
+
+  <div class="insight-grid">
+
+    <div class="insight-card">
+      <div class="insight-icon">🔥</div>
+      <div class="insight-title">The Overthinking Trap</div>
+      <div class="insight-body">
+        The <code>poetry_ai_haiku</code> result is the most revealing: <strong>11,592 tokens</strong> of reasoning for a 12-word output. The model's chain-of-thought mode (enabled by default in Qwen3.5) can create runaway internal deliberation when the task involves multiple simultaneous constraints (syllable count + emotion + irony). The output was excellent — but at 200× the token cost of an efficient response.
+      </div>
+    </div>
+
+    <div class="insight-card">
+      <div class="insight-icon">🧠</div>
+      <div class="insight-title">The 4b Intelligence Threshold</div>
+      <div class="insight-body">
+        The blind spot riddle reveals a clear capability cliff between <code>2b</code> and <code>4b</code>. Below 4b, models produce anatomically plausible but wrong answers ("the lens", "the eye itself"). At 4b and above, models identify the optic disc correctly. This suggests that spatial/anatomical reasoning requires a minimum parameter count — more tokens aren't enough, you need more weights.
+      </div>
+    </div>
+
+    <div class="insight-card">
+      <div class="insight-icon">⚡</div>
+      <div class="insight-title">Speed vs Intelligence Trade-off</div>
+      <div class="insight-body">
+        <code>0.8b</code> runs at <strong>33 t/s</strong> — the fastest by far — but answers incorrectly. <code>27b</code> runs at <strong>5.1 t/s</strong> with near-perfect accuracy. The <code>4b</code> sweet spot: <strong>24.8 t/s</strong> on M5 Metal, correct on most tasks. For production use cases, 4b offers the best intelligence-per-second ratio on consumer hardware.
+      </div>
+    </div>
+
+    <div class="insight-card">
+      <div class="insight-icon">🌐</div>
+      <div class="insight-title">Multilingual Competence</div>
+      <div class="insight-body">
+        The Hebrew <code>hebrew_heisenberg</code> prompt was answered correctly in Hebrew — technically accurate explanations calibrated for two very different audiences. The model didn't switch to English or produce awkward transliterations. However, it used 6,217 tokens for 2 sentences, suggesting multilingual reasoning adds significant computational overhead.
+      </div>
+    </div>
+
+    <div class="insight-card">
+      <div class="insight-icon">⏱</div>
+      <div class="insight-title">Timeout Pattern Analysis</div>
+      <div class="insight-body">
+        All 5 timeouts share a common structure: <strong>hard constraint + verification loop</strong>. The model must generate a candidate, verify it against multiple rules, reject it, and retry — indefinitely. Logic puzzles requiring mutual-knowledge reasoning (hats) and impossible letter constraints (no 'e' in elephant facts) are especially prone to this. Solution: add <code>"think": false</code> for constrained tasks.
+      </div>
+    </div>
+
+    <div class="insight-card">
+      <div class="insight-icon">🎯</div>
+      <div class="insight-title">Where It Truly Excels</div>
+      <div class="insight-body">
+        The model shines brightest on: philosophical analysis (<code>philosophy_identity</code>), structured explanations (<code>science_sky</code>), causal counterfactual reasoning (<code>history_counterfactual</code>), and creative synthesis (<code>synthesis_final</code>). These tasks play to transformer strengths — pattern matching, analogical reasoning, and structured generation. Math trap avoidance (<code>math_trap</code>) also impressive.
+      </div>
+    </div>
+
+  </div>
+</section>
+</div>
+
+<!-- ════════════════════ METHODOLOGY ════════════════════ -->
+<div class="container">
+<section class="section">
+  <div class="section-header">
+    <span class="section-num">05</span>
+    <h2>Methodology — Creative Seeds</h2>
+  </div>
+
+  <div class="method-box">
+    <div>
+      <div class="method-title">The Problem with Standard Benchmarks</div>
+      <div class="method-body">
+        Standard AI benchmarks suffer from a critical flaw: models are trained on data that includes benchmark solutions. MMLU, HumanEval, GSM8K — these are well-known enough that high scores may reflect memorization rather than reasoning.
+        <br><br>
+        This evaluation used the <strong>Creative Seeds</strong> technique: 50 absurdist micro-stories used as cognitive disruptors before generating prompts. By "contaminating" the prompt-generation process with nonsense, the resulting riddles are structurally novel — unlikely to appear in training data.
+        <div class="seed-example">
+          Example seed used: "A quilt made entirely of borrowed time unravels when anyone nearby tells a true story about the future."
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="method-title">Evaluation Philosophy</div>
+      <div class="method-body">
+        Rather than multiple-choice answers, all prompts require open-ended generation, making it harder to "guess correctly." The prompts test:
+        <br><br>
+        <strong>Reasoning</strong> — Can the model resist cognitive biases?<br>
+        <strong>Creativity</strong> — Does it generate genuinely novel content?<br>
+        <strong>Constraint following</strong> — Can it hold multiple rules simultaneously?<br>
+        <strong>Self-awareness</strong> — Is it honest about its own limitations?<br>
+        <strong>Synthesis</strong> — Can it connect disparate domains?
+        <br><br>
+        The blind spot riddle was specifically crafted to avoid the common AI pattern of answering "the iris" or "the pupil" — which correct riddles often do. The optic disc formulation forces genuine anatomical recall, not pattern matching on common riddle formats.
+      </div>
+    </div>
+  </div>
+
+</section>
+</div>
+
+<!-- ════════════════════ FOOTER ════════════════════ -->
+<footer>
+  <div class="container">
+    <p>Qwen3.5 Intelligence Report · March 2026</p>
+    <p style="margin-top:8px;">All models run locally on Apple M5 · Ollama · Temperature 0.7 · No internet access during inference</p>
+    <p style="margin-top:8px;">Built with <a href="https://linktr.ee/aviz85">AVIZ</a> · Creative Seeds methodology</p>
+  </div>
+</footer>
+
+<script>
+function toggleExpand(card) {
+  const resp = card.querySelector('.result-response');
+  const btn = card.querySelector('.expand-btn');
+  if (!resp) return;
+  const expanded = resp.classList.toggle('expanded');
+  if (btn) btn.textContent = expanded ? 'COLLAPSE ↑' : 'EXPAND ↓';
+}
+
+// Animate bars on load
+window.addEventListener('load', () => {
+  const fills = document.querySelectorAll('.token-bar-fill');
+  fills.forEach(f => {
+    const w = f.style.width;
+    f.style.width = '0';
+    setTimeout(() => { f.style.width = w; }, 200);
+  });
+  const intFills = document.querySelectorAll('.int-bar-fill');
+  intFills.forEach(f => {
+    const w = f.style.width;
+    f.style.width = '0';
+    setTimeout(() => { f.style.width = w; }, 400);
+  });
+});
+</script>
+</body>
+</html>
