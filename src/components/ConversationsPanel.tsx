@@ -1,4 +1,4 @@
-import { Trash2, MessageSquare, X, AlertTriangle } from 'lucide-react'
+import { Trash2, MessageSquare, X, AlertTriangle, SquarePen } from 'lucide-react'
 import { useState } from 'react'
 import type { Conversation } from '../hooks/useConversations'
 import { cn } from '../lib/utils'
@@ -10,9 +10,10 @@ interface Props {
   onDelete: (id: string) => void
   onClearAll: () => void
   onClose: () => void
+  onNew: () => void
 }
 
-export function ConversationsPanel({ conversations, activeId, onSelect, onDelete, onClearAll, onClose }: Props) {
+export function ConversationsPanel({ conversations, activeId, onSelect, onDelete, onClearAll, onClose, onNew }: Props) {
   const [confirmClear, setConfirmClear] = useState(false)
 
   function formatDate(ts: number) {
@@ -33,11 +34,25 @@ export function ConversationsPanel({ conversations, activeId, onSelect, onDelete
         <span className="text-xs font-semibold tracking-widest text-gray-400 dark:text-zinc-500 uppercase">
           Conversations
         </span>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={onClose}
+            className="w-6 h-6 flex items-center justify-center rounded-md text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-200 hover:bg-gray-200 dark:hover:bg-zinc-700 transition-all"
+            title="Close"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+
+      {/* New conversation */}
+      <div className="px-3 pt-3 pb-1">
         <button
-          onClick={onClose}
-          className="w-6 h-6 flex items-center justify-center rounded-md text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-200 hover:bg-gray-200 dark:hover:bg-zinc-700 transition-all"
+          onClick={onNew}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold border border-emerald-200 dark:border-emerald-500/40 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-all"
         >
-          <X className="w-3.5 h-3.5" />
+          <SquarePen className="w-3.5 h-3.5" />
+          New conversation
         </button>
       </div>
 

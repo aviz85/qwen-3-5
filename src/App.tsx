@@ -167,9 +167,10 @@ export default function App() {
     <div className="flex flex-col h-screen bg-white dark:bg-zinc-950 text-gray-900 dark:text-zinc-100 overflow-hidden">
 
       {/* ── Header ─────────────────────────────────────────── */}
-      <header className="flex items-center justify-between px-5 py-3 bg-gray-50 dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 shrink-0">
-        <div className="flex items-center gap-3">
-          {/* Sidebar toggle */}
+      <header className="flex items-center px-4 py-3 bg-gray-50 dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 shrink-0">
+
+        {/* Left: sidebar toggle + logo */}
+        <div className="flex items-center gap-3 flex-1">
           <button
             onClick={() => setSidebarOpen(o => !o)}
             className={cn(
@@ -182,7 +183,6 @@ export default function App() {
           >
             <PanelLeft className="w-4 h-4" />
           </button>
-
           <div className="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/40 flex items-center justify-center">
             <span className="text-emerald-600 dark:text-emerald-400 font-black text-base">Q</span>
           </div>
@@ -192,47 +192,40 @@ export default function App() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* Mode toggle */}
-          <div className="flex rounded-lg overflow-hidden border border-gray-200 dark:border-zinc-700 text-xs font-semibold">
-            <button
-              onClick={() => setMode('chat')}
-              disabled={isStreaming || isComparing}
-              className={cn(
-                'flex items-center gap-1.5 px-3 py-1.5 transition-all',
-                mode === 'chat'
-                  ? 'bg-emerald-500 text-white'
-                  : 'bg-white dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 hover:bg-gray-50 dark:hover:bg-zinc-700',
-                (isStreaming || isComparing) && 'opacity-50 cursor-not-allowed',
-              )}
-            >
-              <MessageSquare className="w-3.5 h-3.5" />
-              Chat
-            </button>
-            <button
-              onClick={() => setMode('compare')}
-              disabled={isStreaming || isComparing}
-              className={cn(
-                'flex items-center gap-1.5 px-3 py-1.5 border-l border-gray-200 dark:border-zinc-700 transition-all',
-                mode === 'compare'
-                  ? 'bg-emerald-500 text-white'
-                  : 'bg-white dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 hover:bg-gray-50 dark:hover:bg-zinc-700',
-                (isStreaming || isComparing) && 'opacity-50 cursor-not-allowed',
-              )}
-            >
-              <GitCompare className="w-3.5 h-3.5" />
-              Compare
-            </button>
-          </div>
-
+        {/* Center: Chat / Compare */}
+        <div className="flex rounded-lg overflow-hidden border border-gray-200 dark:border-zinc-700 text-xs font-semibold">
           <button
-            onClick={toggleDark}
-            className="w-8 h-8 rounded-lg flex items-center justify-center border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100 transition-all"
-            title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+            onClick={() => setMode('chat')}
+            disabled={isStreaming || isComparing}
+            className={cn(
+              'flex items-center gap-1.5 px-4 py-2 transition-all',
+              mode === 'chat'
+                ? 'bg-emerald-500 text-white'
+                : 'bg-white dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 hover:bg-gray-50 dark:hover:bg-zinc-700',
+              (isStreaming || isComparing) && 'opacity-50 cursor-not-allowed',
+            )}
           >
-            {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            <MessageSquare className="w-3.5 h-3.5" />
+            Chat
           </button>
+          <button
+            onClick={() => setMode('compare')}
+            disabled={isStreaming || isComparing}
+            className={cn(
+              'flex items-center gap-1.5 px-4 py-2 border-l border-gray-200 dark:border-zinc-700 transition-all',
+              mode === 'compare'
+                ? 'bg-emerald-500 text-white'
+                : 'bg-white dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 hover:bg-gray-50 dark:hover:bg-zinc-700',
+              (isStreaming || isComparing) && 'opacity-50 cursor-not-allowed',
+            )}
+          >
+            <GitCompare className="w-3.5 h-3.5" />
+            Compare
+          </button>
+        </div>
 
+        {/* Right: thinking + new + dark mode */}
+        <div className="flex items-center gap-2 flex-1 justify-end">
           <button
             onClick={() => setThinkMode(!thinkMode)}
             className={cn(
@@ -256,6 +249,14 @@ export default function App() {
               New
             </button>
           )}
+
+          <button
+            onClick={toggleDark}
+            className="w-8 h-8 rounded-lg flex items-center justify-center border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-100 transition-all"
+            title={dark ? 'Light mode' : 'Dark mode'}
+          >
+            {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
         </div>
       </header>
 
@@ -271,6 +272,7 @@ export default function App() {
             onDelete={deleteConversation}
             onClearAll={clearAll}
             onClose={() => setSidebarOpen(false)}
+            onNew={newChat}
           />
         )}
 
